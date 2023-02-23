@@ -1,6 +1,14 @@
+use std::collections::HashMap;
+
 #[derive(serde::Deserialize)]
 pub struct Config {
-  pub servers: Vec<String>,
+  pub servers: HashMap<String, Vec<String>>,
+  pub core: Core,
+}
+
+#[derive(serde::Deserialize)]
+pub struct Core {
+  workspace: String,
 }
 
 fn create_config_dir(path: &std::path::Path) {
@@ -24,7 +32,15 @@ fn ensure_config_dir(path: &std::path::Path) {
 }
 
 fn create_config_file(path: &std::path::Path) {
-  std::fs::write(path, r#"server = []"#).expect("fail to create config");
+  let template = format!(
+    r#"[core]
+workspace="{}/.local/opt/rvbuild/"
+
+[servers]
+qemu-user = []"#,
+    std::env::var("HOME").unwrap()
+  );
+  std::fs::write(path, template).expect("fail to create config");
 }
 
 fn ensure_config_file(path: &std::path::Path) {
@@ -42,7 +58,14 @@ fn ensure_config_file(path: &std::path::Path) {
   }
 }
 
+impl Default for Config {
+  fn default() -> Self {
+    Self::new()
+  }
+}
+
 impl Config {
+  /// Read or create configuration from $HOME/.config/rvbuild/config.toml or $XDG_CONFIG_DIR/rvbuild/config.toml
   pub fn new() -> Config {
     let config_dir;
     if let Ok(xdg_config_dir) = std::env::var("XDG_CONFIG_DIR") {
@@ -54,7 +77,7 @@ impl Config {
 
     ensure_config_dir(&config_dir);
 
-    let config_file = config_dir.join("rvbuild.toml");
+    let config_file = config_dir.join("config.toml");
 
     ensure_config_file(&config_file);
 
@@ -63,4 +86,23 @@ impl Config {
 
     toml::from_str(&raw_config).expect("invalid config content")
   }
+}
+
+#[test]
+fn test_config_initialize() {
+  use std::{env, fs};
+  let tmpdir = tempfile::tempdir().expect("Fail to create new tmp dir");
+  env::set_var("XDG_CONFIG_DIR", tmpdir.path().to_str().unwrap());
+
+  let config = Config::new();
+
+  let cfg_path = tmpdir.path().join("rvbuild").join("config.toml");
+
+  assert!(fs::metadata(&cfg_path).is_ok());
+  assert_eq!(
+    config.core.workspace,
+    format!("{}/.local/opt/rvbuild/", env::var("HOME").unwrap())
+  );
+
+  tmpdir.close().unwrap();
 }

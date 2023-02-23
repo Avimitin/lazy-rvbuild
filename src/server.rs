@@ -58,8 +58,28 @@ impl Server {
   }
 }
 
-pub async fn find_best_server(cfg: &Config) -> Result<Server> {
-  let mut servers: Vec<Server> = cfg.servers.iter().map(Server::new).collect();
+pub async fn find_best_server(cfg: &Config, scope: Option<&str>) -> Result<Server> {
+  let mut servers: Vec<Server>;
+  if let Some(scope) = scope {
+    servers = cfg
+      .servers
+      .get(scope)
+      .ok_or_else(|| anyhow::anyhow!("Given scope `{}` is not found in your configuration", scope))?
+      .iter()
+      .map(Server::new)
+      .collect();
+  } else {
+    servers = cfg
+      .servers
+      .values()
+      .fold(Vec::new(), |mut accum, item| {
+        accum.extend_from_slice(item);
+        accum
+      })
+      .iter()
+      .map(Server::new)
+      .collect();
+  }
 
   let mut lowest = 101.0;
   let mut i = 0;

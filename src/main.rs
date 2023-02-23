@@ -22,7 +22,7 @@ async fn run() -> anyhow::Result<()> {
 
   msg!("Searching best server");
 
-  let server = find_best_server(&config).await?;
+  let server = find_best_server(&config, None).await?;
   msg2!("Selected: {}", server);
 
   Ok(())

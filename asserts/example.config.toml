@@ -1,0 +1,7 @@
+[core]
+workspace = "$HOME/riscv/archlinux-pkg/"
+
+[server]
+qemu-user = ["minun", "shinx"]
+qemu-system = []
+unmatched = ["larvesta"]
