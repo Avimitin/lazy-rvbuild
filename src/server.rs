@@ -58,9 +58,9 @@ impl Server {
   }
 }
 
-pub async fn find_best_server(cfg: &Config, scope: Option<&str>) -> Result<Server> {
+pub async fn find_best_server(cfg: &Config, scope: Option<String>) -> Result<Server> {
   let mut servers: Vec<Server>;
-  if let Some(scope) = scope {
+  if let Some(scope) = &scope {
     servers = cfg
       .servers
       .get(scope)
@@ -79,6 +79,10 @@ pub async fn find_best_server(cfg: &Config, scope: Option<&str>) -> Result<Serve
       .iter()
       .map(Server::new)
       .collect();
+  }
+
+  if servers.is_empty() {
+    anyhow::bail!("No server found!")
   }
 
   let mut lowest = 101.0;
