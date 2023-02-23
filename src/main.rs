@@ -9,20 +9,43 @@
 //! - Type: QEMU-user? RV Board? QEMU-system?
 //! - Choose lowest load
 
+use std::str::FromStr;
+
+use clap::Parser;
 use colored::Colorize;
-use rvbuild::{config::Config, msg, msg2, server::find_best_server};
+use rvbuild::{config::Config, error, msg, msg2, server::find_best_server};
+
+#[derive(Parser)]
+#[command(name = "rvbuild")]
+#[command(author = "Avimitin <avimitin@gmail.com>")]
+#[command(version = "0.1")]
+struct CliArgs {
+  #[arg(short = 't', long)]
+  machine_type: Option<String>,
+  #[arg(short = 'f', long)]
+  config_file: Option<String>,
+}
 
 #[tokio::main]
-async fn main() -> anyhow::Result<()> {
-  run().await
+async fn main() {
+  let result = run().await;
+  if let Err(err) = result {
+    error!("{err}")
+  }
 }
 
 async fn run() -> anyhow::Result<()> {
-  let config = Config::new();
+  let arg = CliArgs::parse();
 
-  msg!("Searching best server");
+  let config = if let Some(file) = &arg.config_file {
+    Config::from_str(file)?
+  } else {
+    Config::new()
+  };
 
-  let server = find_best_server(&config, None).await?;
+  msg!("Testing servers");
+
+  let server = find_best_server(&config, arg.machine_type).await?;
   msg2!("Selected: {}", server);
 
   Ok(())
