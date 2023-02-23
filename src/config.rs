@@ -88,6 +88,14 @@ impl Config {
   }
 }
 
+impl std::str::FromStr for Config {
+  type Err = anyhow::Error;
+  fn from_str(path: &str) -> anyhow::Result<Self> {
+    let raw: String = std::fs::read_to_string(path)?;
+    Ok(toml::from_str(&raw)?)
+  }
+}
+
 #[test]
 fn test_config_initialize() {
   use std::{env, fs};
