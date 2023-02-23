@@ -61,6 +61,7 @@ impl Server {
 pub async fn find_best_server(cfg: &Config, scope: Option<String>) -> Result<Server> {
   let mut servers: Vec<Server>;
   if let Some(scope) = &scope {
+    // If user specify server type
     servers = cfg
       .servers
       .get(scope)
@@ -69,6 +70,7 @@ pub async fn find_best_server(cfg: &Config, scope: Option<String>) -> Result<Ser
       .map(Server::new)
       .collect();
   } else {
+    // If user doesn't specify scope, test all the servers
     servers = cfg
       .servers
       .values()
